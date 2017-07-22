@@ -6,6 +6,8 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 	"os/exec"
 	"sync/atomic"
 	"time"
@@ -15,32 +17,8 @@ var (
 	localAddr  = flag.String("l", ":2345", "proxy local address")
 	remoteAddr = flag.String("r", "127.0.0.1:2345", "proxy remote address")
 	verbose    = flag.Bool("v", false, "test")
-	cmd        *exec.Cmd
 )
 
-func startDelve() {
-	stopDelve()
-	cmd = exec.Command("/bin/sh", "-c", "screen -L -dmS delve dlv debug --listen "+*remoteAddr+" --headless")
-	if err := cmd.Start(); err != nil {
-		log.Fatal(err)
-	}
-}
-
-func stopDelve() {
-	if cmd != nil {
-		cmd.Process.Signal(os.Kill)
-		time.Sleep(time.Millisecond * 100)
-		cmd.Process.Release()
-		cmd = nil
-	}
-	time.Sleep(time.Millisecond * 100)
-	exec.Command("screen", "-S", "delve", "-X", "kill").Run()
-	time.Sleep(time.Millisecond * 500)
-	exec.Command("pkill", "-SIGKILL dlv").Run()
-	time.Sleep(time.Millisecond * 500)
-	exec.Command("pkill", "-SIGKILL debug").Run()
-	time.Sleep(time.Millisecond * 200)
-}
 
 func main() {
 	flag.Parse()
